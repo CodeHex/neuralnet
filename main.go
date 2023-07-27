@@ -31,8 +31,21 @@ func main() {
 	fmt.Println(hyperParams)
 
 	// Read training data model
+	_, err = NewImageSetBuilder().
+		WithLogging().
+		WithPathPrefix("datasets/Vegetable Images/train").
+		AddFolder("Cabbage", false).
+		AddFolder("Carrot", true).
+		ResizeImages(64, 64).
+		Build()
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Use hyperparameters to train model
+
+	// Read test data
 
 	// Use model to generate predictions
 }
