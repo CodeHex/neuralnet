@@ -1,6 +1,5 @@
 # neuralnet
 
-**IN DEVELOPMENT** i.e. doesn't work at the moment
 
 Implements a basic L-Layer neural network. Current features are
 
@@ -10,6 +9,8 @@ Implements a basic L-Layer neural network. Current features are
 
 
 ## How to use
+
+### Define the hyper parameters
 Define the L layer net by using the `neuralnet.NewHyperParametersBuilder()` with the following options
 
 - `AddLayers(a ActivationFuncName, neurons ...uint)` - adds layers with the specified neurons and activation function
@@ -23,13 +24,14 @@ The last layer must be a single neuron using the `sigmoid` activation function f
 e.g.
 ```go
 hyperParams, err := neuralnet.NewHyperParametersBuilder().
-    AddLayers(neuralnet.ActivationFuncNameReLU, 2, 5, 4).
+    AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
     AddLayer(neuralnet.ActivationFuncNameSigmoid, 1)
-    SetLearningRate(0.05).
-    SetIterations(2000).
+    SetLearningRate(0.15).
+    SetIterations(5000).
     Build()
 ```
 
+### Load the training set
 Once defined, create a training set using the `neuralnet.NewImageSetBuilder()` with the following options
 
 - `WithPathPrefix(pathPrefix string)` - defines a root folder to use
@@ -45,8 +47,32 @@ trainingDataSet, err := neuralnet.NewImageSetBuilder().
     WithPathPrefix("datasets/Vegetable Images/train").
     AddFolder("Cabbage", false).
     AddFolder("Carrot", true).
-    ResizeImages(64, 64).
+    ResizeImages(32, 32).
     Build()
 ```
 
-More to come...
+### Train the model with dataset
+```go
+model, err := hyperParams.TrainModel(trainingDataSet)
+```
+
+### Verify accuracy of training set
+```go
+model.Predict(trainingDataSet)
+```
+
+### Load the testing set
+e.g.
+```go
+testDataSet, err := neuralnet.NewImageSetBuilder().
+    WithPathPrefix("../datasets/Vegetable Images/test").
+    AddFolder("Cabbage", false).
+    AddFolder("Carrot", true).
+    ResizeImages(32, 32).
+    Build()
+```
+
+### Verify accuracy of test set
+```go
+model.Predict(testDataSet)
+```

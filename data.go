@@ -11,7 +11,7 @@ import (
 	"github.com/nfnt/resize"
 )
 
-type Entry struct {
+type entry struct {
 	pathToImage          string
 	binaryClassification bool
 	featureVector        []float64
@@ -19,7 +19,7 @@ type Entry struct {
 
 type ImageSet struct {
 	width, height        uint
-	entries              []Entry
+	entries              []entry
 	featureCount         uint
 	vectorised           mx.Matrix
 	classificationVector mx.Matrix
@@ -66,9 +66,8 @@ func (builder ImageSetBuilder) AddFolder(pathToFolder string, classification boo
 		if !file.IsDir() {
 			added += 1
 			builder.currentSet.entries = append(builder.currentSet.entries,
-				Entry{pathToImage: path.Join(folderPath, file.Name()), binaryClassification: classification})
+				entry{pathToImage: path.Join(folderPath, file.Name()), binaryClassification: classification})
 		}
-
 	}
 	builder.log(fmt.Sprintf("- Adding %d image(s) with classification '%t'", added, classification))
 	return builder
@@ -85,7 +84,7 @@ func (builder ImageSetBuilder) AddImage(pathToImage string, classification bool)
 	}
 	builder.log(fmt.Sprintf("🖼️ Adding image %s with classification %t", pathToImage, classification))
 	builder.currentSet.entries = append(builder.currentSet.entries,
-		Entry{pathToImage: pathToImage, binaryClassification: classification})
+		entry{pathToImage: pathToImage, binaryClassification: classification})
 	return builder
 }
 

@@ -9,10 +9,11 @@ import (
 func main() {
 	// Generate hyperparameters
 	hyperParams, err := neuralnet.NewHyperParametersBuilder().
-		AddLayers(neuralnet.ActivationFuncNameReLU, 2, 5, 4).
+		AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
-		SetLearningRate(0.01).
-		SetIterations(2000).
+		SetInitFactor(0.01).
+		SetLearningRate(0.15).
+		SetIterations(5000).
 		Build()
 
 	if err != nil {
@@ -25,7 +26,7 @@ func main() {
 		WithPathPrefix("../datasets/Vegetable Images/train").
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
-		ResizeImages(64, 64).
+		ResizeImages(32, 32).
 		Build()
 
 	if err != nil {
@@ -33,13 +34,26 @@ func main() {
 	}
 
 	// Use hyperparameters to train model
-	_, err = hyperParams.TrainModel(trainingDataSet)
+	model, err := hyperParams.TrainModel(trainingDataSet)
 
 	if err != nil {
 		panic(err)
 	}
 
+	model.Predict(trainingDataSet)
+
 	// Read test data
+	testDataSet, err := neuralnet.NewImageSetBuilder().
+		WithPathPrefix("../datasets/Vegetable Images/test").
+		AddFolder("Cabbage", false).
+		AddFolder("Carrot", true).
+		ResizeImages(32, 32).
+		Build()
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Use model to generate predictions
+	model.Predict(testDataSet)
 }

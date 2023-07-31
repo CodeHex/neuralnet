@@ -1,6 +1,7 @@
 package mx
 
 import (
+	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -128,4 +129,8 @@ func (m Matrix) RowSum(matToSum Matrix, normalize bool) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+func (m Matrix) String() string {
+	return fmt.Sprintf("%+v", *m.imp)
 }
