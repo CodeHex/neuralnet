@@ -3,7 +3,7 @@ package mx_test
 import (
 	"testing"
 
-	"github.com/codehex/neuralnet/pkg/mx"
+	"github.com/codehex/neuralnet/mx"
 )
 
 func TestNewRandomMatrix(t *testing.T) {

@@ -1,10 +1,10 @@
-package main
+package neuralnet
 
 import (
 	"fmt"
 	"math"
 
-	"github.com/codehex/neuralnet/pkg/mx"
+	"github.com/codehex/neuralnet/mx"
 )
 
 type TrainedModel struct {
