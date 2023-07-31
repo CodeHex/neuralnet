@@ -41,21 +41,16 @@ func NewHyperParametersBuilder() HyperParametersBuilder {
 	}
 }
 
-func (builder HyperParametersBuilder) AddLayer(a ActivationFuncName, neurons uint) HyperParametersBuilder {
-	builder.params.layers = append(builder.params.layers, LayerDefinition{neurons, a, getActivationFunc(a), getActivationDerFunc(a)})
+func (builder HyperParametersBuilder) AddLayers(a ActivationFuncName, neurons ...uint) HyperParametersBuilder {
+	for _, n := range neurons {
+		builder.params.layers = append(builder.params.layers, LayerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a)})
+	}
 	return builder
 }
 
 func (builder HyperParametersBuilder) AddNLayers(a ActivationFuncName, neurons uint, n uint) HyperParametersBuilder {
 	for i := uint(0); i < n; i++ {
 		builder.params.layers = append(builder.params.layers, LayerDefinition{neurons, a, getActivationFunc(a), getActivationDerFunc(a)})
-	}
-	return builder
-}
-
-func (builder HyperParametersBuilder) AddMultipleLayers(a ActivationFuncName, neurons ...uint) HyperParametersBuilder {
-	for _, n := range neurons {
-		builder.params.layers = append(builder.params.layers, LayerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a)})
 	}
 	return builder
 }

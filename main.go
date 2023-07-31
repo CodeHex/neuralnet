@@ -5,8 +5,8 @@ import "fmt"
 func main() {
 	// Generate hyperparameters
 	hyperParams, err := NewHyperParametersBuilder().
-		AddMultipleLayers("relu", 2, 5, 4).
-		AddLayer("sigmoid", 1).
+		AddLayers(ActivationFuncNameReLU, 2, 5, 4).
+		AddLayers(ActivationFuncNameSigmoid, 1).
 		SetLearningRate(0.01).
 		SetIterations(2000).
 		Build()
