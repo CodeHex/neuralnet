@@ -1,4 +1,4 @@
-package main
+package neuralnet
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/codehex/neuralnet/pkg/mx"
+	"github.com/codehex/neuralnet/mx"
 	"github.com/nfnt/resize"
 )
 

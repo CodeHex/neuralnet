@@ -10,7 +10,7 @@ Implements a basic L-Layer neural network. Current features are
 
 
 ## How to use
-Define the L layer net by using the `NewHyperParametersBuilder()` with the following options
+Define the L layer net by using the `neuralnet.NewHyperParametersBuilder()` with the following options
 
 - `AddLayers(a ActivationFuncName, neurons ...uint)` - adds layers with the specified neurons and activation function
 - `AddNLayer(a ActivationFuncName, neurons uint, n uint)` - adds n indentical layers to the net
@@ -22,15 +22,15 @@ The last layer must be a single neuron using the `sigmoid` activation function f
 
 e.g.
 ```go
-hyperParams, err := NewHyperParametersBuilder().
-    AddLayers(ActivationFuncNameReLU, 2, 5, 4).
-    AddLayer(ActivationFuncNameSigmoid, 1)
+hyperParams, err := neuralnet.NewHyperParametersBuilder().
+    AddLayers(neuralnet.ActivationFuncNameReLU, 2, 5, 4).
+    AddLayer(neuralnet.ActivationFuncNameSigmoid, 1)
     SetLearningRate(0.05).
     SetIterations(2000).
     Build()
 ```
 
-Once defined, create a training set using the `NewImageSetBuilder()` with the following options
+Once defined, create a training set using the `neuralnet.NewImageSetBuilder()` with the following options
 
 - `WithPathPrefix(pathPrefix string)` - defines a root folder to use
 - `AddFolder(pathToFolder string, classification bool)` - adds a folder to the training set, with the classification to use
@@ -41,7 +41,7 @@ If the images are not being resized, they need to be all of the same height and 
 
 e.g.
 ```go
-trainingDataSet, err := NewImageSetBuilder().
+trainingDataSet, err := neuralnet.NewImageSetBuilder().
     WithPathPrefix("datasets/Vegetable Images/train").
     AddFolder("Cabbage", false).
     AddFolder("Carrot", true).

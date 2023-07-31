@@ -1,12 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/codehex/neuralnet"
+)
 
 func main() {
 	// Generate hyperparameters
-	hyperParams, err := NewHyperParametersBuilder().
-		AddLayers(ActivationFuncNameReLU, 2, 5, 4).
-		AddLayers(ActivationFuncNameSigmoid, 1).
+	hyperParams, err := neuralnet.NewHyperParametersBuilder().
+		AddLayers(neuralnet.ActivationFuncNameReLU, 2, 5, 4).
+		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
 		SetLearningRate(0.01).
 		SetIterations(2000).
 		Build()
@@ -17,9 +21,8 @@ func main() {
 	fmt.Println(hyperParams)
 
 	// Read training data model
-	trainingDataSet, err := NewImageSetBuilder().
-		WithLogging().
-		WithPathPrefix("datasets/Vegetable Images/train").
+	trainingDataSet, err := neuralnet.NewImageSetBuilder().
+		WithPathPrefix("../datasets/Vegetable Images/train").
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
 		ResizeImages(64, 64).
