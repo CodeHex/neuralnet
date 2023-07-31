@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/codehex/neuralnet/pkg/mx"
 	"github.com/nfnt/resize"
 )
 
@@ -17,8 +18,11 @@ type Entry struct {
 }
 
 type ImageSet struct {
-	width, height uint
-	entries       []Entry
+	width, height        uint
+	entries              []Entry
+	featureCount         uint
+	vectorised           mx.Matrix
+	classificationVector mx.Matrix
 }
 
 type ImageSetBuilder struct {
@@ -137,10 +141,15 @@ func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 			}
 		}
 		builder.currentSet.entries[i].featureVector = convertImageToFeatures(image)
+		if i == 0 {
+			builder.currentSet.featureCount = uint(len(builder.currentSet.entries[i].featureVector))
+		}
 	}
 	builder.log("Feature vectors built successfully (image size %dx%d, features:%d)",
 		builder.currentSet.width, builder.currentSet.height,
 		len(builder.currentSet.entries[0].featureVector))
+	builder.currentSet.vectorised = builder.currentSet.vectoriseExamples()
+	builder.currentSet.classificationVector = builder.currentSet.vectoriseLabels()
 	builder.log("✅ Done")
 	return builder.currentSet, nil
 }
@@ -180,6 +189,7 @@ func loadImage(path string) (image.Image, error) {
 	return img, nil
 }
 
+// TODO add test
 func convertImageToFeatures(image image.Image) []float64 {
 	bounds := image.Bounds()
 	vector := make([]float64, bounds.Dx()*bounds.Dy()*3)
@@ -193,4 +203,36 @@ func convertImageToFeatures(image image.Image) []float64 {
 		}
 	}
 	return vector
+}
+
+func (i *ImageSet) NumberOfExamples() uint {
+	return uint(len(i.entries))
+}
+
+func (i *ImageSet) X() mx.Matrix {
+	return i.vectorised
+}
+
+func (i *ImageSet) Y() mx.Matrix {
+	return i.classificationVector
+}
+
+func (i *ImageSet) vectoriseExamples() mx.Matrix {
+	vectors := make([][]float64, i.NumberOfExamples())
+	for i, entry := range i.entries {
+		vectors[i] = entry.featureVector
+	}
+	return mx.NewHorizontalStackedMatrix(vectors)
+}
+
+func (i *ImageSet) vectoriseLabels() mx.Matrix {
+	labels := make([]float64, i.NumberOfExamples())
+	for i, entry := range i.entries {
+		if entry.binaryClassification {
+			labels[i] = 1
+		} else {
+			labels[i] = 0
+		}
+	}
+	return mx.NewRowVector(labels)
 }
