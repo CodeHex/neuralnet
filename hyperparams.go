@@ -13,7 +13,7 @@ const (
 	ActivationFuncNameSigmoid ActivationFuncName = "sigmoid"
 )
 
-type LayerDefinition struct {
+type layerDefinition struct {
 	neurons           uint
 	actFuncLabel      ActivationFuncName
 	activationFunc    func(float64) float64
@@ -21,7 +21,7 @@ type LayerDefinition struct {
 }
 
 type HyperParameters struct {
-	layers       []LayerDefinition
+	layers       []layerDefinition
 	learningRate float64
 	iterations   uint
 	initFactor   float64
@@ -43,14 +43,14 @@ func NewHyperParametersBuilder() HyperParametersBuilder {
 
 func (builder HyperParametersBuilder) AddLayers(a ActivationFuncName, neurons ...uint) HyperParametersBuilder {
 	for _, n := range neurons {
-		builder.params.layers = append(builder.params.layers, LayerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a)})
+		builder.params.layers = append(builder.params.layers, layerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a)})
 	}
 	return builder
 }
 
 func (builder HyperParametersBuilder) AddNLayers(a ActivationFuncName, neurons uint, n uint) HyperParametersBuilder {
 	for i := uint(0); i < n; i++ {
-		builder.params.layers = append(builder.params.layers, LayerDefinition{neurons, a, getActivationFunc(a), getActivationDerFunc(a)})
+		builder.params.layers = append(builder.params.layers, layerDefinition{neurons, a, getActivationFunc(a), getActivationDerFunc(a)})
 	}
 	return builder
 }
@@ -113,15 +113,15 @@ func (h HyperParameters) String() string {
 	return "Hyperparameters:\n" + title + "\n" + layers
 }
 
-func (h HyperParameters) Layer(i int) LayerDefinition {
+func (h HyperParameters) Layer(i int) layerDefinition {
 	return h.layers[i-1]
 }
 
-func (l LayerDefinition) ActicationFunc() func(float64) float64 {
+func (l layerDefinition) ActivationFunc() func(float64) float64 {
 	return l.activationFunc
 }
 
-func (l LayerDefinition) ActivationDerivativeFunc() func(float64) float64 {
+func (l layerDefinition) ActivationDerivativeFunc() func(float64) float64 {
 	return l.activationDerFunc
 }
 

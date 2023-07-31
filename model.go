@@ -8,6 +8,7 @@ import (
 )
 
 type TrainedModel struct {
+	hyper  HyperParameters
 	params *parameters
 }
 
@@ -15,48 +16,30 @@ type parameters struct {
 	W, b []mx.Matrix
 }
 
-type cacheEntry struct {
+type cacheLayer struct {
 	Z, A, DW, Db, DZ, DA mx.Matrix
 }
 
 func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, error) {
 	nodes := h.generateNodes(trainingDataSet.featureCount)
 	params := h.initParameters(nodes)
-
-	// Initialize the caches by generating all Z and A matrices, with A[0] being the training data set
-	// Empty entries will be added for entites that don't make sense i.e. W[0]
-	cache := make([]cacheEntry, len(nodes))
-	cache[0].A = trainingDataSet.X()
-	m := trainingDataSet.NumberOfExamples()
-	L := len(h.layers)
+	cache := h.initCache(nodes, trainingDataSet)
+	L := len(nodes) - 1
 	Y := trainingDataSet.Y()
-	OneMinusY := mx.NewZeroMatrix(nodes[L], m)
-	OneMinusY.ElemOp(Y, func(v float64) float64 { return float64(1) - v })
-	OneMinusAL := mx.NewZeroMatrix(nodes[L], m)
-	P1 := mx.NewZeroMatrix(nodes[L], m)
-	P2 := mx.NewZeroMatrix(nodes[L], m)
-	for i := 1; i <= L; i++ {
-		cache[i].Z = mx.NewZeroMatrix(nodes[i], m)
-		cache[i].A = mx.NewZeroMatrix(nodes[i], m)
-		cache[i].DW = mx.NewZeroMatrix(nodes[i], nodes[i-1])
-		cache[i].Db = mx.NewZeroMatrix(nodes[i], 1)
-		cache[i].DZ = mx.NewZeroMatrix(nodes[i], m)
-		cache[i].DA = mx.NewZeroMatrix(nodes[i], m)
-	}
+	m := trainingDataSet.NumberOfExamples()
 
 	for iter := uint(0); iter < h.iterations; iter++ {
 
 		// Forward propagation
-		for i := 1; i <= L; i++ {
+		for i := 1; i < len(nodes); i++ {
 			h.forwardPropagation(cache, params, i)
 		}
 
 		// Set up the cache for the last layer
 		// dAL = - P1 + P2 where P1 = Y / AL and P2 = (1 - Y) / (1 - AL)
-		OneMinusAL.ElemOp(cache[L].A, func(v float64) float64 { return float64(1) - v })
-		P2.MatrixElemOp(OneMinusY, OneMinusAL, func(v1, v2 float64) float64 { return v1 / v2 })
-		P1.MatrixElemOp(Y, cache[L].A, func(v1, v2 float64) float64 { return v1 / v2 })
-		cache[L].DA.MatrixElemOp(P2, P1, func(v1, v2 float64) float64 { return v1 - v2 })
+		cache[L].DA.MatrixElemOp(Y, cache[L].A, func(y, a float64) float64 {
+			return (-y / a) + ((1 - y) / (1 - a))
+		})
 
 		// Print the cost every 100 iterations
 		if iter != 0 && iter%100 == 0 {
@@ -65,11 +48,11 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 
 		// Backward propagation and update parameters
 		for i := L; i > 0; i-- {
-			h.backwardPropagation(cache, params, i)
-			h.updateParameters(cache, params, i, h.layers[i])
+			h.backwardPropagation(cache, params, i, m)
+			h.updateParameters(cache, params, i)
 		}
 	}
-	return &TrainedModel{params: params}, nil
+	return &TrainedModel{hyper: h, params: params}, nil
 }
 
 func (h HyperParameters) initParameters(nodes []uint) *parameters {
@@ -86,10 +69,27 @@ func (h HyperParameters) initParameters(nodes []uint) *parameters {
 	return &params
 }
 
-func (h HyperParameters) forwardPropagation(cache []cacheEntry, params *parameters, i int) {
+func (h HyperParameters) initCache(nodes []uint, trainingDataSet *ImageSet) []cacheLayer {
+	cache := make([]cacheLayer, len(nodes))
+	// Initialize the caches by generating all Z, A and delta matrices, with A[0] being the training data set
+	// Empty entries will be added for entities that don't make sense i.e. W[0]
+	cache[0].A = trainingDataSet.X()
+	m := trainingDataSet.NumberOfExamples()
+	for i := 1; i < len(cache); i++ {
+		cache[i].Z = mx.NewZeroMatrix(nodes[i], m)
+		cache[i].A = mx.NewZeroMatrix(nodes[i], m)
+		cache[i].DW = mx.NewZeroMatrix(nodes[i], nodes[i-1])
+		cache[i].Db = mx.NewZeroMatrix(nodes[i], 1)
+		cache[i].DZ = mx.NewZeroMatrix(nodes[i], m)
+		cache[i].DA = mx.NewZeroMatrix(nodes[i], m)
+	}
+	return cache
+}
+
+func (h HyperParameters) forwardPropagation(cache []cacheLayer, params *parameters, i int) {
 	cache[i].Z.MatrixMultiply(params.W[i], cache[i-1].A)
 	cache[i].Z.AddColumnVector(cache[i].Z, params.b[i])
-	cache[i].A.ElemOp(cache[i].Z, h.Layer(i).ActicationFunc())
+	cache[i].A.ElemOp(cache[i].Z, h.Layer(i).ActivationFunc())
 }
 
 func costFunction(A, Y mx.Matrix) float64 {
@@ -101,18 +101,51 @@ func costFunction(A, Y mx.Matrix) float64 {
 	return -sum / float64(m)
 }
 
-func (h HyperParameters) backwardPropagation(cache []cacheEntry, params *parameters, i int) {
+func (h HyperParameters) backwardPropagation(cache []cacheLayer, params *parameters, i int, m uint) {
 	cache[i].DZ.ElemOp(cache[i].Z, h.Layer(i).ActivationDerivativeFunc())
 	cache[i].DZ.MatrixElemOp(cache[i].DZ, cache[i].DA, func(v1, v2 float64) float64 { return v1 * v2 })
 	cache[i].DW.MatrixMultiply(cache[i].DZ, cache[i-1].A.T())
+	cache[i].DW.ElemOp(cache[i].DW, func(v float64) float64 { return v / float64(m) })
 	cache[i].Db.RowSum(cache[i].DZ, true)
 	if i > 1 {
 		cache[i-1].DA.MatrixMultiply(params.W[i].T(), cache[i].DZ)
 	}
 }
 
-func (h HyperParameters) updateParameters(cache []cacheEntry, params *parameters, i int, layer LayerDefinition) {
+func (h HyperParameters) updateParameters(cache []cacheLayer, params *parameters, i int) {
 	deltaFunc := func(x, dx float64) float64 { return x - h.learningRate*dx }
 	params.W[i].MatrixElemOp(params.W[i], cache[i].DW, deltaFunc)
 	params.b[i].MatrixElemOp(params.b[i], cache[i].Db, deltaFunc)
+}
+
+func (t *TrainedModel) Predict(set *ImageSet) {
+	nodes := t.hyper.generateNodes(set.featureCount)
+	params := t.params
+	cache := t.hyper.initCache(nodes, set)
+	L := len(nodes) - 1
+	Y := set.Y()
+	m := set.NumberOfExamples()
+
+	for i := 1; i < len(nodes); i++ {
+		t.hyper.forwardPropagation(cache, params, i)
+	}
+
+	var correct uint
+	var incorrect uint
+	for i := 0; i < int(m); i++ {
+		var predicted float64
+		if cache[L].A.At(0, i) > 0.5 {
+			predicted = 1
+		} else {
+			predicted = 0
+		}
+		if predicted == Y.At(0, i) {
+			correct++
+		} else {
+			incorrect++
+		}
+	}
+
+	fmt.Println("correct:", correct, ", incorrect:", incorrect, ", accuracy:", float64(correct)/float64(m))
+
 }
