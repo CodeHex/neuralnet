@@ -11,8 +11,8 @@ func main() {
 	hyperParams, err := neuralnet.NewHyperParametersBuilder().
 		AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
-		SetInitFactor(0.01).
-		SetLearningRate(0.15).
+		SetInitFactor(0.0095).
+		SetLearningRate(0.05).
 		SetIterations(5000).
 		Build()
 
@@ -26,7 +26,7 @@ func main() {
 		WithPathPrefix("../datasets/Vegetable Images/train").
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
-		ResizeImages(32, 32).
+		ResizeImages(64, 64).
 		Build()
 
 	if err != nil {
@@ -47,7 +47,7 @@ func main() {
 		WithPathPrefix("../datasets/Vegetable Images/test").
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
-		ResizeImages(32, 32).
+		ResizeImages(64, 64).
 		Build()
 
 	if err != nil {
