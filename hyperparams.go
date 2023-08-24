@@ -11,6 +11,7 @@ type ActivationFuncName string
 const (
 	ActivationFuncNameReLU    ActivationFuncName = "relu"
 	ActivationFuncNameSigmoid ActivationFuncName = "sigmoid"
+	ActivationFuncNameTanh    ActivationFuncName = "tanh"
 )
 
 type layerDefinition struct {
@@ -131,6 +132,8 @@ func getActivationFunc(a ActivationFuncName) func(float64) float64 {
 		return relu
 	case ActivationFuncNameSigmoid:
 		return sigmoid
+	case ActivationFuncNameTanh:
+		return tanh
 	default:
 		return relu
 	}
@@ -142,6 +145,8 @@ func getActivationDerFunc(a ActivationFuncName) func(float64) float64 {
 		return reluDerivative
 	case ActivationFuncNameSigmoid:
 		return sigmoidDerivative
+	case ActivationFuncNameTanh:
+		return tanhDerivative
 	default:
 		return relu
 	}
@@ -176,4 +181,12 @@ func sigmoid(z float64) float64 {
 
 func sigmoidDerivative(z float64) float64 {
 	return sigmoid(z) * (1 - sigmoid(z))
+}
+
+func tanh(z float64) float64 {
+	return math.Tanh(z)
+}
+
+func tanhDerivative(z float64) float64 {
+	return 1 - math.Pow(tanh(z), 2)
 }
