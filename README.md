@@ -5,7 +5,7 @@ Implements a basic L-Layer neural network. Current features are
 
 - Inputs are images only (classification is based on folder location)
 - Binary classification only 
-- Supports only relu and sigmoid activation functions
+- Supports only relu, tanh and sigmoid activation functions
 
 
 ## How to use
