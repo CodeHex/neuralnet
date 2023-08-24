@@ -14,6 +14,7 @@ func main() {
 		SetInitFactor(0.0095).
 		SetLearningRate(0.05).
 		SetIterations(5000).
+		UseL2Regularization(0.1).
 		Build()
 
 	if err != nil {

@@ -25,6 +25,7 @@ type HyperParameters struct {
 	learningRate float64
 	iterations   uint
 	initFactor   float64
+	l2Lambda     float64
 }
 
 type HyperParametersBuilder struct {
@@ -67,6 +68,11 @@ func (builder HyperParametersBuilder) SetIterations(iterations uint) HyperParame
 
 func (builder HyperParametersBuilder) SetInitFactor(initFactor float64) HyperParametersBuilder {
 	builder.params.initFactor = initFactor
+	return builder
+}
+
+func (builder HyperParametersBuilder) UseL2Regularization(lambda float64) HyperParametersBuilder {
+	builder.params.l2Lambda = lambda
 	return builder
 }
 
