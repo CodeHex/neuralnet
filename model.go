@@ -63,7 +63,7 @@ func (h HyperParameters) initParameters(nodes []uint) *parameters {
 		b: make([]mx.Matrix, len(nodes)),
 	}
 	for i := 1; i < len(nodes); i++ {
-		params.W[i] = mx.NewRandomMatrix(nodes[i], nodes[i-1], h.initFactor)
+		params.W[i] = mx.NewRandomMatrix(nodes[i], nodes[i-1], h.Layer(i).initFactor(nodes[i-1]))
 		params.b[i] = mx.NewZeroMatrix(nodes[i], 1)
 	}
 	return &params

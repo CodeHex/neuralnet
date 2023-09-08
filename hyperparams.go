@@ -19,13 +19,13 @@ type layerDefinition struct {
 	actFuncLabel      ActivationFuncName
 	activationFunc    func(float64) float64
 	activationDerFunc func(float64) float64
+	initFactor        func(uint) float64
 }
 
 type HyperParameters struct {
 	layers       []layerDefinition
 	learningRate float64
 	iterations   uint
-	initFactor   float64
 }
 
 type HyperParametersBuilder struct {
@@ -37,21 +37,24 @@ func NewHyperParametersBuilder() HyperParametersBuilder {
 		params: HyperParameters{
 			learningRate: 0.01,
 			iterations:   1000,
-			initFactor:   0.01,
 		},
 	}
 }
 
 func (builder HyperParametersBuilder) AddLayers(a ActivationFuncName, neurons ...uint) HyperParametersBuilder {
 	for _, n := range neurons {
-		builder.params.layers = append(builder.params.layers, layerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a)})
+		initFactor := calculateInitFactor(a)
+		layer := layerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a), initFactor}
+		builder.params.layers = append(builder.params.layers, layer)
 	}
 	return builder
 }
 
 func (builder HyperParametersBuilder) AddNLayers(a ActivationFuncName, neurons uint, n uint) HyperParametersBuilder {
 	for i := uint(0); i < n; i++ {
-		builder.params.layers = append(builder.params.layers, layerDefinition{neurons, a, getActivationFunc(a), getActivationDerFunc(a)})
+		initFactor := calculateInitFactor(a)
+		layer := layerDefinition{n, a, getActivationFunc(a), getActivationDerFunc(a), initFactor}
+		builder.params.layers = append(builder.params.layers, layer)
 	}
 	return builder
 }
@@ -63,11 +66,6 @@ func (builder HyperParametersBuilder) SetLearningRate(learningRate float64) Hype
 
 func (builder HyperParametersBuilder) SetIterations(iterations uint) HyperParametersBuilder {
 	builder.params.iterations = iterations
-	return builder
-}
-
-func (builder HyperParametersBuilder) SetInitFactor(initFactor float64) HyperParametersBuilder {
-	builder.params.initFactor = initFactor
 	return builder
 }
 
@@ -90,10 +88,6 @@ func (builder HyperParametersBuilder) Build() (HyperParameters, error) {
 		return HyperParameters{}, errors.New("no layers defined")
 	}
 
-	if builder.params.initFactor <= 0 {
-		return HyperParameters{}, errors.New("initialization factor must be greater than 0")
-	}
-
 	if builder.params.layers[len(builder.params.layers)-1].actFuncLabel != ActivationFuncNameSigmoid {
 		return HyperParameters{}, errors.New("last layer must have sigmoid activation function")
 	}
@@ -105,11 +99,12 @@ func (builder HyperParametersBuilder) Build() (HyperParameters, error) {
 }
 
 func (h HyperParameters) String() string {
-	title := fmt.Sprintf("number of layers: %d, learning rate: %.3f, iterations: %d, init factor: %.2f",
-		len(h.layers), h.learningRate, h.iterations, h.initFactor)
+	title := fmt.Sprintf("number of layers: %d, learning rate: %.3f, iterations: %d",
+		len(h.layers), h.learningRate, h.iterations)
 	layers := "layers:\n"
 	for i := range h.layers {
-		layers += fmt.Sprintf("  layer %d - %d neuron(s), %s activation function\n", i+1, h.layers[i].neurons, h.layers[i].actFuncLabel)
+		layers += fmt.Sprintf("  layer %d - %d neuron(s), %s activation function\n",
+			i+1, h.layers[i].neurons, h.layers[i].actFuncLabel)
 	}
 	return "Hyperparameters:\n" + title + "\n" + layers
 }
@@ -150,6 +145,14 @@ func getActivationDerFunc(a ActivationFuncName) func(float64) float64 {
 	default:
 		return relu
 	}
+}
+
+func calculateInitFactor(a ActivationFuncName) func(uint) float64 {
+	var numerator float64 = 1.0
+	if a == ActivationFuncNameReLU {
+		numerator = 2.0
+	}
+	return func(n uint) float64 { return math.Sqrt(numerator / float64(n)) }
 }
 
 func (h HyperParameters) generateNodes(featureCount uint) []uint {

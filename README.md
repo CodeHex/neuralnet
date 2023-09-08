@@ -6,6 +6,7 @@ Implements a basic L-Layer neural network. Current features are
 - Inputs are images only (classification is based on folder location)
 - Binary classification only 
 - Supports only relu, tanh and sigmoid activation functions
+- Auto-initialize weights
 
 
 ## How to use
@@ -17,7 +18,6 @@ Define the L layer net by using the `neuralnet.NewHyperParametersBuilder()` with
 - `AddNLayer(a ActivationFuncName, neurons uint, n uint)` - adds n indentical layers to the net
 - `SetLearningRate(learningRate float64)` - The learning rate to use, defaults to 0.01
 - `SetIterations(iterations uint)` - number of iterations used to train the model, defaults to 1000
-- `SetInitFactor(initFactor float64)` - defines the noise factor used when initialising the bias (components are randomly set between 0 and `initFactor`). Defaults to 0.01
 
 The last layer must be a single neuron using the `sigmoid` activation function for binary classification.
 
