@@ -12,9 +12,8 @@ func main() {
 		AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
 		AddLayers(neuralnet.ActivationFuncNameTanh, 2).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
-		SetInitFactor(0.0095).
 		SetLearningRate(0.05).
-		SetIterations(5000).
+		SetIterations(2000).
 		Build()
 
 	if err != nil {
