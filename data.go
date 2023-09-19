@@ -173,24 +173,7 @@ func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 
 	if builder.normalize {
 		builder.log("Normalizing feature vectors...")
-		sum := make([]float64, len(builder.currentSet.entries[0].featureVector))
-		sumSquared := make([]float64, len(builder.currentSet.entries[0].featureVector))
-		for i := range builder.currentSet.entries {
-			for j := range builder.currentSet.entries[i].featureVector {
-				sum[j] += builder.currentSet.entries[i].featureVector[j]
-				sumSquared[j] += builder.currentSet.entries[i].featureVector[j] * builder.currentSet.entries[i].featureVector[j]
-			}
-		}
-
-		for i := range builder.currentSet.entries {
-			for j := range builder.currentSet.entries[i].featureVector {
-				mean := sum[j] / float64(len(builder.currentSet.entries))
-				variance := sumSquared[j] / float64(len(builder.currentSet.entries))
-				oldVal := builder.currentSet.entries[i].featureVector[j]
-				newVal := oldVal - mean/variance
-				builder.currentSet.entries[i].featureVector[j] = newVal
-			}
-		}
+		builder.currentSet.normalize()
 	}
 
 	builder.currentSet.vectorised = builder.currentSet.vectoriseExamples()
@@ -289,4 +272,29 @@ func (i *ImageSet) vectoriseLabels() mx.Matrix {
 		}
 	}
 	return mx.NewRowVector(labels)
+}
+
+func (i *ImageSet) normalize() {
+	count := len(i.entries)
+	featureCount := len(i.entries[0].featureVector)
+	sum := make([]float64, featureCount)
+	sumSquared := make([]float64, featureCount)
+
+	// Calulate sum and sum of squares
+	for entryIndex := range i.entries {
+		for featureIndex := range i.entries[entryIndex].featureVector {
+			sum[featureIndex] += i.entries[entryIndex].featureVector[featureIndex]
+			sumSquared[featureIndex] += i.entries[entryIndex].featureVector[featureIndex] * i.entries[entryIndex].featureVector[featureIndex]
+		}
+	}
+
+	// Normalize each vector entry
+	for entryIndex := range i.entries {
+		for featureIndex := range i.entries[entryIndex].featureVector {
+			mean := sum[featureIndex] / float64(count)
+			variance := sumSquared[featureIndex] / float64(count)
+			oldVal := i.entries[entryIndex].featureVector[featureIndex]
+			i.entries[entryIndex].featureVector[featureIndex] = (oldVal - mean) / variance
+		}
+	}
 }
