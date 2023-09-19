@@ -8,6 +8,7 @@ Implements a basic L-Layer neural network. Current features are
 - Supports only relu, tanh and sigmoid activation functions
 - Auto-initialize weights
 - Augment data by flipping images horizontally
+- Normalize data sets
 
 
 ## How to use
@@ -40,6 +41,7 @@ Once defined, create a training set using the `neuralnet.NewImageSetBuilder()` w
 - `AddImage(pathToImage string, classification bool)` - adds a single image, with the classification to use
 - `ResizeImages(width, height uint)` - resize all the images
 - `AugmentFlipHorizontal()` - doubles the data set by considering the images flipped horizontally
+- `Normalize()` - normalizes the data. Note that if the training set is normalized, the test set will also need to be normalized.
 
 If the images are not being resized, they need to be all of the same height and width.
 
@@ -51,6 +53,7 @@ trainingDataSet, err := neuralnet.NewImageSetBuilder().
     AddFolder("Cabbage", false).
     AddFolder("Carrot", true).
     ResizeImages(32, 32).
+    Normalize().
     Build()
 ```
 
@@ -72,6 +75,7 @@ testDataSet, err := neuralnet.NewImageSetBuilder().
     AddFolder("Cabbage", false).
     AddFolder("Carrot", true).
     ResizeImages(32, 32).
+    Normalize().
     Build()
 ```
 

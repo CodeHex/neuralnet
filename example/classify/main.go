@@ -10,9 +10,8 @@ func main() {
 	// Generate hyperparameters
 	hyperParams, err := neuralnet.NewHyperParametersBuilder().
 		AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
-		AddLayers(neuralnet.ActivationFuncNameTanh, 2).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
-		SetLearningRate(0.05).
+		SetLearningRate(0.02).
 		SetIterations(2000).
 		Build()
 
@@ -28,6 +27,7 @@ func main() {
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
 		ResizeImages(64, 64).
+		Normalize().
 		Build()
 
 	if err != nil {
@@ -49,6 +49,7 @@ func main() {
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).
 		ResizeImages(64, 64).
+		Normalize().
 		Build()
 
 	if err != nil {

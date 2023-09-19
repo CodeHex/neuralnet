@@ -99,7 +99,7 @@ func (builder HyperParametersBuilder) Build() (HyperParameters, error) {
 }
 
 func (h HyperParameters) String() string {
-	title := fmt.Sprintf("number of layers: %d, learning rate: %.3f, iterations: %d",
+	title := fmt.Sprintf("number of layers: %d, learning rate: %.4f, iterations: %d",
 		len(h.layers), h.learningRate, h.iterations)
 	layers := "layers:\n"
 	for i := range h.layers {
