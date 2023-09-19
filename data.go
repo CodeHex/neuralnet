@@ -33,6 +33,7 @@ type ImageSetBuilder struct {
 	currentSet       *ImageSet
 	err              error
 	augmentFlipHoriz bool
+	normalize        bool
 }
 
 func NewImageSetBuilder() ImageSetBuilder {
@@ -111,6 +112,11 @@ func (builder ImageSetBuilder) AugmentFlipHorizontal() ImageSetBuilder {
 	return builder
 }
 
+func (builder ImageSetBuilder) Normalize() ImageSetBuilder {
+	builder.normalize = true
+	return builder
+}
+
 func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 	if builder.err != nil {
 		builder.logError(builder.err)
@@ -164,6 +170,29 @@ func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 	builder.log("Feature vectors built successfully (image size %dx%d, features:%d)",
 		builder.currentSet.width, builder.currentSet.height,
 		len(builder.currentSet.entries[0].featureVector))
+
+	if builder.normalize {
+		builder.log("Normalizing feature vectors...")
+		sum := make([]float64, len(builder.currentSet.entries[0].featureVector))
+		sumSquared := make([]float64, len(builder.currentSet.entries[0].featureVector))
+		for i := range builder.currentSet.entries {
+			for j := range builder.currentSet.entries[i].featureVector {
+				sum[j] += builder.currentSet.entries[i].featureVector[j]
+				sumSquared[j] += builder.currentSet.entries[i].featureVector[j] * builder.currentSet.entries[i].featureVector[j]
+			}
+		}
+
+		for i := range builder.currentSet.entries {
+			for j := range builder.currentSet.entries[i].featureVector {
+				mean := sum[j] / float64(len(builder.currentSet.entries))
+				variance := sumSquared[j] / float64(len(builder.currentSet.entries))
+				oldVal := builder.currentSet.entries[i].featureVector[j]
+				newVal := oldVal - mean/variance
+				builder.currentSet.entries[i].featureVector[j] = newVal
+			}
+		}
+	}
+
 	builder.currentSet.vectorised = builder.currentSet.vectoriseExamples()
 	builder.currentSet.classificationVector = builder.currentSet.vectoriseLabels()
 	builder.log("✅ Done")
