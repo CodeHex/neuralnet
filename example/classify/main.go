@@ -23,6 +23,7 @@ func main() {
 
 	// Read training data model
 	trainingDataSet, err := neuralnet.NewImageSetBuilder().
+		AugmentFlipHorizontal().
 		WithPathPrefix("../datasets/Vegetable Images/train").
 		AddFolder("Cabbage", false).
 		AddFolder("Carrot", true).

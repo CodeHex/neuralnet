@@ -7,6 +7,7 @@ Implements a basic L-Layer neural network. Current features are
 - Binary classification only 
 - Supports only relu, tanh and sigmoid activation functions
 - Auto-initialize weights
+- Augment data by flipping images horizontally
 
 
 ## How to use
@@ -37,13 +38,15 @@ Once defined, create a training set using the `neuralnet.NewImageSetBuilder()` w
 - `WithPathPrefix(pathPrefix string)` - defines a root folder to use
 - `AddFolder(pathToFolder string, classification bool)` - adds a folder to the training set, with the classification to use
 - `AddImage(pathToImage string, classification bool)` - adds a single image, with the classification to use
-- `ResizeImages(width, height uint)` - resize all the imagesa 
+- `ResizeImages(width, height uint)` - resize all the images
+- `AugmentFlipHorizontal()` - doubles the data set by considering the images flipped horizontally
 
 If the images are not being resized, they need to be all of the same height and width.
 
 e.g.
 ```go
 trainingDataSet, err := neuralnet.NewImageSetBuilder().
+    AugmentFlipHorizontal().
     WithPathPrefix("datasets/Vegetable Images/train").
     AddFolder("Cabbage", false).
     AddFolder("Carrot", true).

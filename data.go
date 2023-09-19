@@ -13,6 +13,7 @@ import (
 
 type entry struct {
 	pathToImage          string
+	flippedHoriz         bool
 	binaryClassification bool
 	featureVector        []float64
 }
@@ -26,11 +27,12 @@ type ImageSet struct {
 }
 
 type ImageSetBuilder struct {
-	resize     bool
-	pathPrefix string
-	logging    bool
-	currentSet *ImageSet
-	err        error
+	resize           bool
+	pathPrefix       string
+	logging          bool
+	currentSet       *ImageSet
+	err              error
+	augmentFlipHoriz bool
 }
 
 func NewImageSetBuilder() ImageSetBuilder {
@@ -104,10 +106,25 @@ func (builder ImageSetBuilder) ResizeImages(width, height uint) ImageSetBuilder 
 	return builder
 }
 
+func (builder ImageSetBuilder) AugmentFlipHorizontal() ImageSetBuilder {
+	builder.augmentFlipHoriz = true
+	return builder
+}
+
 func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 	if builder.err != nil {
 		builder.logError(builder.err)
 		return nil, builder.err
+	}
+
+	if builder.augmentFlipHoriz {
+		builder.log("Augmenting dataset with horizontal flips...")
+		orgLen := len(builder.currentSet.entries)
+		for i := 0; i < orgLen; i++ {
+			entry := builder.currentSet.entries[i]
+			entry.flippedHoriz = true
+			builder.currentSet.entries = append(builder.currentSet.entries, entry)
+		}
 	}
 
 	builder.log("Building feature vectors for images...")
@@ -139,7 +156,7 @@ func (builder ImageSetBuilder) Build() (*ImageSet, error) {
 				}
 			}
 		}
-		builder.currentSet.entries[i].featureVector = convertImageToFeatures(image)
+		builder.currentSet.entries[i].featureVector = convertImageToFeatures(image, entry.flippedHoriz)
 		if i == 0 {
 			builder.currentSet.featureCount = uint(len(builder.currentSet.entries[i].featureVector))
 		}
@@ -189,16 +206,25 @@ func loadImage(path string) (image.Image, error) {
 }
 
 // TODO add test
-func convertImageToFeatures(image image.Image) []float64 {
+func convertImageToFeatures(image image.Image, flippedHoriz bool) []float64 {
 	bounds := image.Bounds()
 	vector := make([]float64, bounds.Dx()*bounds.Dy()*3)
+
+	setVector := func(x, y int) {
+		index := y*int(bounds.Dx())*3 + x*3
+		r, g, b, _ := image.At(x, y).RGBA()
+		vector[index] = float64(r/256) / 255
+		vector[index+1] = float64(g/256) / 255
+		vector[index+2] = float64(b/256) / 255
+	}
+
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			index := y*int(bounds.Dx())*3 + x*3
-			r, g, b, _ := image.At(x, y).RGBA()
-			vector[index] = float64(r/256) / 255
-			vector[index+1] = float64(g/256) / 255
-			vector[index+2] = float64(b/256) / 255
+			if flippedHoriz {
+				setVector(bounds.Max.X-x+bounds.Min.X-1, y)
+				continue
+			}
+			setVector(x, y)
 		}
 	}
 	return vector
