@@ -131,6 +131,17 @@ func (m Matrix) RowSum(matToSum Matrix, normalize bool) {
 	wg.Wait()
 }
 
+func (m Matrix) FrobeniusNorm() float64 {
+	r, c := m.Dims()
+	sum := 0.0
+	for i := 0; i < r; i++ {
+		for j := 0; j < c; j++ {
+			sum += m.imp.At(i, j) * m.imp.At(i, j)
+		}
+	}
+	return sum
+}
+
 func (m Matrix) String() string {
 	return fmt.Sprintf("%+v", *m.imp)
 }

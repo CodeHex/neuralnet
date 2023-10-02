@@ -43,7 +43,7 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 
 		// Print the cost every 100 iterations
 		if iter != 0 && iter%100 == 0 {
-			fmt.Println("iter:", iter, ", cost", costFunction(cache[L].A, Y))
+			fmt.Println("iter:", iter, ", cost", h.costFunction(cache[L].A, Y, params.W[L]))
 		}
 
 		// Backward propagation and update parameters
@@ -92,12 +92,25 @@ func (h HyperParameters) forwardPropagation(cache []cacheLayer, params *paramete
 	cache[i].A.ElemOp(cache[i].Z, h.Layer(i).ActivationFunc())
 }
 
-func costFunction(A, Y mx.Matrix) float64 {
+func (h HyperParameters) costFunction(A, Y, W mx.Matrix) float64 {
 	_, m := Y.Dims()
 	sum := float64(0)
 	for i := 0; i < m; i++ {
 		sum += (Y.At(0, i) * math.Log(A.At(0, i))) + ((1 - Y.At(0, i)) * math.Log(1-A.At(0, i)))
 	}
+	if h.regularizationFactor != 0 {
+		sum += (h.regularizationFactor / 2) * W.FrobeniusNorm()
+	}
+	return -sum / float64(m)
+}
+
+func costFunctionWithReg(A, Y, W mx.Matrix, lambda float64) float64 {
+	_, m := Y.Dims()
+	sum := float64(0)
+	for i := 0; i < m; i++ {
+		sum += (Y.At(0, i) * math.Log(A.At(0, i))) + ((1 - Y.At(0, i)) * math.Log(1-A.At(0, i)))
+	}
+	sum += (lambda / 2) * W.FrobeniusNorm()
 	return -sum / float64(m)
 }
 
@@ -105,11 +118,17 @@ func (h HyperParameters) backwardPropagation(cache []cacheLayer, params *paramet
 	cache[i].DZ.ElemOp(cache[i].Z, h.Layer(i).ActivationDerivativeFunc())
 	cache[i].DZ.MatrixElemOp(cache[i].DZ, cache[i].DA, func(v1, v2 float64) float64 { return v1 * v2 })
 	cache[i].DW.MatrixMultiply(cache[i].DZ, cache[i-1].A.T())
-	cache[i].DW.ElemOp(cache[i].DW, func(v float64) float64 { return v / float64(m) })
 	cache[i].Db.RowSum(cache[i].DZ, true)
 	if i > 1 {
 		cache[i-1].DA.MatrixMultiply(params.W[i].T(), cache[i].DZ)
 	}
+	if h.regularizationFactor != 0 {
+		cache[i].DW.MatrixElemOp(cache[i].DW, params.W[i], func(v1, v2 float64) float64 {
+			return v1 + (h.regularizationFactor * v2)
+		})
+	}
+	cache[i].DW.ElemOp(cache[i].DW, func(v float64) float64 { return v / float64(m) })
+
 }
 
 func (h HyperParameters) updateParameters(cache []cacheLayer, params *parameters, i int) {
