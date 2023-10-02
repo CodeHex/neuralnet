@@ -15,6 +15,7 @@ func main() {
 		SetIterations(2000).
 		SetRegularizationFactor(0.5).
 		SetDropoutKeepProbability(0.75).
+		SetMiniBatchSize(1024).
 		Build()
 
 	if err != nil {
