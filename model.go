@@ -118,10 +118,10 @@ func (h HyperParameters) costFunction(A, Y, W mx.Matrix) float64 {
 func (h HyperParameters) backwardPropagation(cache []cacheLayer, params *parameters, i int, m uint) {
 	cache[i].DZ.ElemOp(cache[i].Z, h.Layer(i).ActivationDerivativeFunc())
 	cache[i].DZ.MatrixElemOp(cache[i].DZ, cache[i].DA, func(v1, v2 float64) float64 { return v1 * v2 })
-	cache[i].DW.MatrixMultiply(cache[i].DZ, cache[i-1].A.T())
+	cache[i].DW.MatrixMultiply(cache[i].DZ, cache[i-1].A.Transpose())
 	cache[i].Db.RowSum(cache[i].DZ, true)
 	if i > 1 {
-		cache[i-1].DA.MatrixMultiply(params.W[i].T(), cache[i].DZ)
+		cache[i-1].DA.MatrixMultiply(params.W[i].Transpose(), cache[i].DZ)
 	}
 	if h.regularizationFactor != 0 {
 		cache[i].DW.MatrixElemOp(cache[i].DW, params.W[i], func(v1, v2 float64) float64 {
