@@ -11,6 +11,7 @@ Implements a basic L-Layer neural network. Current features are
 - Normalize data sets
 - Use L2 regularization
 - Use dropout
+- Split training set into mini batches
 
 
 ## How to use
@@ -24,6 +25,7 @@ Define the L layer net by using the `neuralnet.NewHyperParametersBuilder()` with
 - `SetIterations(iterations uint)` - number of iterations used to train the model, defaults to 1000
 - `SetRegularizationFactor(regularizationFactor float64)` - the regularization factor to use. 0 indicates not to regularize.
 - `SetDropoutKeepProbability` - enables dropout by specifying the probability neurons should be kept (i.e. not dropped). 0 indicates not to dropout. 
+- `SetMiniBatchSize` - splits the training set into mini batches for large data sets
 
 The last layer must be a single neuron using the `sigmoid` activation function for binary classification.
 
@@ -36,6 +38,7 @@ hyperParams, err := neuralnet.NewHyperParametersBuilder().
     SetIterations(5000).
     SetRegularizationFactor(0.5).
     SetDropoutKeepProbability(0.75).
+    SetMiniBatchSize(1024).
     Build()
 ```
 
