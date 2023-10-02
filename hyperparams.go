@@ -27,6 +27,7 @@ type HyperParameters struct {
 	learningRate         float64
 	iterations           uint
 	regularizationFactor float64
+	keepProb             float64
 }
 
 type HyperParametersBuilder struct {
@@ -72,6 +73,11 @@ func (builder HyperParametersBuilder) SetIterations(iterations uint) HyperParame
 
 func (builder HyperParametersBuilder) SetRegularizationFactor(regularizationFactor float64) HyperParametersBuilder {
 	builder.params.regularizationFactor = regularizationFactor
+	return builder
+}
+
+func (builder HyperParametersBuilder) SetDropoutKeepProbability(keepProb float64) HyperParametersBuilder {
+	builder.params.keepProb = keepProb
 	return builder
 }
 
