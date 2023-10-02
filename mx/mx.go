@@ -26,6 +26,7 @@ type MatrixViewable interface {
 	Dims() (rows, columns int)
 	Transpose() MatrixView
 	View() MatrixView
+	FrobeniusNorm() float64
 }
 
 func (m Matrix) Dims() (rows, columns int) {
@@ -153,14 +154,26 @@ func (m Matrix) RowSum(matToSum MatrixViewable, normalize bool) {
 }
 
 func (m Matrix) FrobeniusNorm() float64 {
-	r, c := m.Dims()
+	return m.View().FrobeniusNorm()
+}
+
+func (v MatrixView) FrobeniusNorm() float64 {
+	r, c := v.Dims()
 	sum := 0.0
 	for i := 0; i < r; i++ {
 		for j := 0; j < c; j++ {
-			sum += m.At(i, j) * m.At(i, j)
+			sum += v.At(i, j) * v.At(i, j)
 		}
 	}
 	return sum
+}
+
+func (m Matrix) SliceColumns(start, end int) MatrixView {
+	_, c := m.Dims()
+	if start < 0 || end > c {
+		panic("Slice out of bounds")
+	}
+	return MatrixView{view: m.imp.Slice(0, m.imp.RawMatrix().Rows, start, end)}
 }
 
 func (m Matrix) String() string {

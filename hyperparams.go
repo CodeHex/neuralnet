@@ -28,6 +28,7 @@ type HyperParameters struct {
 	iterations           uint
 	regularizationFactor float64
 	keepProb             float64
+	miniBatchSize        uint
 }
 
 type HyperParametersBuilder struct {
@@ -78,6 +79,11 @@ func (builder HyperParametersBuilder) SetRegularizationFactor(regularizationFact
 
 func (builder HyperParametersBuilder) SetDropoutKeepProbability(keepProb float64) HyperParametersBuilder {
 	builder.params.keepProb = keepProb
+	return builder
+}
+
+func (builder HyperParametersBuilder) SetMiniBatchSize(size uint) HyperParametersBuilder {
+	builder.params.miniBatchSize = size
 	return builder
 }
 
