@@ -10,8 +10,50 @@ import (
 )
 
 type Matrix struct {
-	transposed bool
-	imp        *mat.Dense
+	imp *mat.Dense
+}
+
+type MatrixView struct {
+	view mat.Matrix
+}
+
+func (m Matrix) View() MatrixView {
+	return MatrixView{view: m.imp}
+}
+
+type MatrixViewable interface {
+	At(row, column int) float64
+	Dims() (rows, columns int)
+	Transpose() MatrixView
+	View() MatrixView
+}
+
+func (m Matrix) Dims() (rows, columns int) {
+	return m.imp.Dims()
+}
+
+func (m Matrix) At(row, column int) float64 {
+	return m.imp.At(row, column)
+}
+
+func (m Matrix) Transpose() MatrixView {
+	return MatrixView{m.imp.T()}
+}
+
+func (v MatrixView) Dims() (rows, columns int) {
+	return v.view.Dims()
+}
+
+func (v MatrixView) At(row, column int) float64 {
+	return v.view.At(row, column)
+}
+
+func (v MatrixView) Transpose() MatrixView {
+	return MatrixView{v.view.T()}
+}
+
+func (v MatrixView) View() MatrixView {
+	return v
 }
 
 func NewRandomMatrix(rows, columns uint, randomFactor float64) Matrix {
@@ -22,7 +64,7 @@ func NewRandomMatrix(rows, columns uint, randomFactor float64) Matrix {
 	for i := range result {
 		result[i] = r.Float64() * randomFactor
 	}
-	return Matrix{imp: mat.NewDense(int(rows), int(columns), result)}
+	return Matrix{mat.NewDense(int(rows), int(columns), result)}
 }
 
 func NewRandomUnitMatrix(rows, columns uint, prob float64) Matrix {
@@ -35,11 +77,11 @@ func NewRandomUnitMatrix(rows, columns uint, prob float64) Matrix {
 			result[i] = 1
 		}
 	}
-	return Matrix{imp: mat.NewDense(int(rows), int(columns), result)}
+	return Matrix{mat.NewDense(int(rows), int(columns), result)}
 }
 
 func NewZeroMatrix(rows, columns uint) Matrix {
-	return Matrix{imp: mat.NewDense(int(rows), int(columns), nil)}
+	return Matrix{mat.NewDense(int(rows), int(columns), nil)}
 }
 
 func NewHorizontalStackedMatrix(vectors [][]float64) Matrix {
@@ -49,76 +91,42 @@ func NewHorizontalStackedMatrix(vectors [][]float64) Matrix {
 			result.Set(i, j, vectors[j][i])
 		}
 	}
-	return Matrix{imp: result}
+	return Matrix{result}
 }
 
 func NewColumnVector(values []float64) Matrix {
-	return Matrix{imp: mat.NewDense(len(values), 1, values)}
+	return Matrix{mat.NewDense(len(values), 1, values)}
 }
 
 func NewRowVector(values []float64) Matrix {
-	return Matrix{imp: mat.NewDense(1, len(values), values)}
+	return Matrix{mat.NewDense(1, len(values), values)}
 }
 
-func (m Matrix) Dims() (rows, columns int) {
-	r, c := m.imp.Dims()
-	if m.transposed {
-		return c, r
-	}
-	return r, c
+func (m Matrix) MatrixMultiply(a, b MatrixViewable) {
+	m.imp.Mul(a.View().view, b.View().view)
 }
 
-func (m Matrix) At(row, column int) float64 {
-	if m.transposed {
-		return m.imp.At(column, row)
-	}
-	return m.imp.At(row, column)
-}
-
-func (m Matrix) MatrixMultiply(a, b Matrix) {
-	switch {
-	case a.transposed && b.transposed:
-		m.imp.Mul(a.imp.T(), b.imp.T())
-	case a.transposed:
-		m.imp.Mul(a.imp.T(), b.imp)
-	case b.transposed:
-		m.imp.Mul(a.imp, b.imp.T())
-	default:
-		m.imp.Mul(a.imp, b.imp)
-	}
-}
-
-func (m Matrix) AddColumnVector(a, b Matrix) {
-	if a.transposed || b.transposed {
-		panic("Cannot add column vector to transposed matrix")
-	}
+func (m Matrix) AddColumnVector(a, b MatrixViewable) {
 	m.imp.Apply(func(i, j int, v float64) float64 {
-		return v + b.imp.At(i, 0)
-	}, a.imp)
+		return v + b.At(i, 0)
+	}, a.View().view)
 }
 
-func (m Matrix) ElemOp(a Matrix, f func(v float64) float64) {
+func (m Matrix) ElemOp(a MatrixViewable, f func(v float64) float64) {
 	applyFunc := func(i, j int, v float64) float64 {
 		return f(v)
 	}
-	m.imp.Apply(applyFunc, a.imp)
+	m.imp.Apply(applyFunc, a.View().view)
 }
 
-func (m Matrix) MatrixElemOp(a, b Matrix, f func(v1, v2 float64) float64) {
-	if a.transposed || b.transposed {
-		panic("Cannot element-wise operate on transposed matrix")
-	}
+func (m Matrix) MatrixElemOp(a, b MatrixViewable, f func(v1, v2 float64) float64) {
 	applyFunc := func(i, j int, v float64) float64 {
-		return f(v, b.imp.At(i, j))
+		return f(v, b.At(i, j))
 	}
-	m.imp.Apply(applyFunc, a.imp)
+	m.imp.Apply(applyFunc, a.View().view)
 }
 
-func (m Matrix) T() Matrix {
-	return Matrix{imp: m.imp, transposed: !m.transposed}
-}
-
-func (m Matrix) RowSum(matToSum Matrix, normalize bool) {
+func (m Matrix) RowSum(matToSum MatrixViewable, normalize bool) {
 	rRes, cRes := m.Dims()
 	r, c := matToSum.Dims()
 	if cRes != 1 || rRes != r {
@@ -133,7 +141,7 @@ func (m Matrix) RowSum(matToSum Matrix, normalize bool) {
 			defer wg.Done()
 			sum := 0.0
 			for j := 0; j < c; j++ {
-				sum += matToSum.imp.At(i, j)
+				sum += matToSum.At(i, j)
 			}
 			if normalize {
 				sum /= float64(c)
@@ -149,7 +157,7 @@ func (m Matrix) FrobeniusNorm() float64 {
 	sum := 0.0
 	for i := 0; i < r; i++ {
 		for j := 0; j < c; j++ {
-			sum += m.imp.At(i, j) * m.imp.At(i, j)
+			sum += m.At(i, j) * m.At(i, j)
 		}
 	}
 	return sum
