@@ -30,26 +30,32 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 
 	for iter := uint(0); iter < h.iterations; iter++ {
 
-		// Forward propagation
-		for i := 1; i < len(nodes); i++ {
-			h.forwardPropagation(cache, params, i, true)
+		batches := uint(1)
+		if m > h.miniBatchSize && h.miniBatchSize != 0 {
+			batches = (m / h.miniBatchSize) + 1
 		}
+		for batch := uint(0); batch < batches; batch++ {
+			// Forward propagation
+			for i := 1; i < len(nodes); i++ {
+				h.forwardPropagation(cache, params, i, true)
+			}
 
-		// Set up the cache for the last layer
-		// dAL = - P1 + P2 where P1 = Y / AL and P2 = (1 - Y) / (1 - AL)
-		cache[L].DA.MatrixElemOp(Y, cache[L].A, func(y, a float64) float64 {
-			return (-y / a) + ((1 - y) / (1 - a))
-		})
+			// Set up the cache for the last layer
+			// dAL = - P1 + P2 where P1 = Y / AL and P2 = (1 - Y) / (1 - AL)
+			cache[L].DA.MatrixElemOp(Y, cache[L].A, func(y, a float64) float64 {
+				return (-y / a) + ((1 - y) / (1 - a))
+			})
 
-		// Print the cost every 100 iterations
-		if iter != 0 && iter%100 == 0 {
-			fmt.Println("iter:", iter, ", cost", h.costFunction(cache[L].A, Y, params.W[L]))
-		}
+			// Print the cost every 100 iterations
+			if iter != 0 && iter%100 == 0 {
+				fmt.Println("iter:", iter, ", cost", h.costFunction(cache[L].A, Y, params.W[L]))
+			}
 
-		// Backward propagation and update parameters
-		for i := L; i > 0; i-- {
-			h.backwardPropagation(cache, params, i, m)
-			h.updateParameters(cache, params, i)
+			// Backward propagation and update parameters
+			for i := L; i > 0; i-- {
+				h.backwardPropagation(cache, params, i, m)
+				h.updateParameters(cache, params, i)
+			}
 		}
 	}
 	return &TrainedModel{hyper: h, params: params}, nil
