@@ -17,7 +17,7 @@ type parameters struct {
 }
 
 type cacheLayer struct {
-	Z, A, DW, Db, DZ, DA mx.Matrix
+	Z, A, D, DW, Db, DZ, DA mx.Matrix
 }
 
 func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, error) {
@@ -32,7 +32,7 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 
 		// Forward propagation
 		for i := 1; i < len(nodes); i++ {
-			h.forwardPropagation(cache, params, i)
+			h.forwardPropagation(cache, params, i, true)
 		}
 
 		// Set up the cache for the last layer
@@ -86,10 +86,21 @@ func (h HyperParameters) initCache(nodes []uint, trainingDataSet *ImageSet) []ca
 	return cache
 }
 
-func (h HyperParameters) forwardPropagation(cache []cacheLayer, params *parameters, i int) {
+func (h HyperParameters) forwardPropagation(cache []cacheLayer, params *parameters, i int, training bool) {
 	cache[i].Z.MatrixMultiply(params.W[i], cache[i-1].A)
 	cache[i].Z.AddColumnVector(cache[i].Z, params.b[i])
 	cache[i].A.ElemOp(cache[i].Z, h.Layer(i).ActivationFunc())
+	// Only knock out neurons if we're not on the last layer
+	if h.keepProb != 0 && i != len(cache)-1 && training {
+		// Random generate a matrix with the same dimensions as A[i], set to either 0 or 1
+		// with probability keepProb
+		rows, cols := cache[i].A.Dims()
+		cache[i].D = mx.NewRandomUnitMatrix(uint(rows), uint(cols), h.keepProb)
+		// Scale up existing values by 1/keepProb
+		cache[i].D.ElemOp(cache[i].D, func(v float64) float64 { return v / h.keepProb })
+		// Knock out some of the neurons, boosting the ones that are there
+		cache[i].A.MatrixElemOp(cache[i].A, cache[i].D, func(v1, v2 float64) float64 { return v1 * v2 })
+	}
 }
 
 func (h HyperParameters) costFunction(A, Y, W mx.Matrix) float64 {
@@ -101,16 +112,6 @@ func (h HyperParameters) costFunction(A, Y, W mx.Matrix) float64 {
 	if h.regularizationFactor != 0 {
 		sum += (h.regularizationFactor / 2) * W.FrobeniusNorm()
 	}
-	return -sum / float64(m)
-}
-
-func costFunctionWithReg(A, Y, W mx.Matrix, lambda float64) float64 {
-	_, m := Y.Dims()
-	sum := float64(0)
-	for i := 0; i < m; i++ {
-		sum += (Y.At(0, i) * math.Log(A.At(0, i))) + ((1 - Y.At(0, i)) * math.Log(1-A.At(0, i)))
-	}
-	sum += (lambda / 2) * W.FrobeniusNorm()
 	return -sum / float64(m)
 }
 
@@ -127,8 +128,10 @@ func (h HyperParameters) backwardPropagation(cache []cacheLayer, params *paramet
 			return v1 + (h.regularizationFactor * v2)
 		})
 	}
+	if h.keepProb != 0 && i != len(cache)-1 && i != 1 {
+		cache[i-1].DA.MatrixElemOp(cache[i-1].DA, cache[i].D, func(v1, v2 float64) float64 { return v1 * v2 })
+	}
 	cache[i].DW.ElemOp(cache[i].DW, func(v float64) float64 { return v / float64(m) })
-
 }
 
 func (h HyperParameters) updateParameters(cache []cacheLayer, params *parameters, i int) {
@@ -146,7 +149,7 @@ func (t *TrainedModel) Predict(set *ImageSet) {
 	m := set.NumberOfExamples()
 
 	for i := 1; i < len(nodes); i++ {
-		t.hyper.forwardPropagation(cache, params, i)
+		t.hyper.forwardPropagation(cache, params, i, false)
 	}
 
 	var correct uint

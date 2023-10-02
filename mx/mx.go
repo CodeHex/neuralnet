@@ -25,6 +25,19 @@ func NewRandomMatrix(rows, columns uint, randomFactor float64) Matrix {
 	return Matrix{imp: mat.NewDense(int(rows), int(columns), result)}
 }
 
+func NewRandomUnitMatrix(rows, columns uint, prob float64) Matrix {
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+
+	result := make([]float64, rows*columns)
+	for i := range result {
+		if r.Float64() < prob {
+			result[i] = 1
+		}
+	}
+	return Matrix{imp: mat.NewDense(int(rows), int(columns), result)}
+}
+
 func NewZeroMatrix(rows, columns uint) Matrix {
 	return Matrix{imp: mat.NewDense(int(rows), int(columns), nil)}
 }

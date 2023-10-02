@@ -14,6 +14,7 @@ func main() {
 		SetLearningRate(0.02).
 		SetIterations(2000).
 		SetRegularizationFactor(0.5).
+		SetDropoutKeepProbability(0.75).
 		Build()
 
 	if err != nil {
