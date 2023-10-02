@@ -23,9 +23,10 @@ type layerDefinition struct {
 }
 
 type HyperParameters struct {
-	layers       []layerDefinition
-	learningRate float64
-	iterations   uint
+	layers               []layerDefinition
+	learningRate         float64
+	iterations           uint
+	regularizationFactor float64
 }
 
 type HyperParametersBuilder struct {
@@ -66,6 +67,11 @@ func (builder HyperParametersBuilder) SetLearningRate(learningRate float64) Hype
 
 func (builder HyperParametersBuilder) SetIterations(iterations uint) HyperParametersBuilder {
 	builder.params.iterations = iterations
+	return builder
+}
+
+func (builder HyperParametersBuilder) SetRegularizationFactor(regularizationFactor float64) HyperParametersBuilder {
+	builder.params.regularizationFactor = regularizationFactor
 	return builder
 }
 

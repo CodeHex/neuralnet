@@ -9,10 +9,11 @@ import (
 func main() {
 	// Generate hyperparameters
 	hyperParams, err := neuralnet.NewHyperParametersBuilder().
-		AddLayers(neuralnet.ActivationFuncNameReLU, 3, 2).
+		AddLayers(neuralnet.ActivationFuncNameReLU, 6, 6).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
 		SetLearningRate(0.02).
 		SetIterations(2000).
+		SetRegularizationFactor(0.5).
 		Build()
 
 	if err != nil {
