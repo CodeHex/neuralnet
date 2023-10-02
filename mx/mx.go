@@ -10,15 +10,15 @@ import (
 )
 
 type Matrix struct {
-	*mat.Dense
+	imp *mat.Dense
 }
 
 type MatrixView struct {
-	mat.Matrix
+	view mat.Matrix
 }
 
 func (m Matrix) View() MatrixView {
-	return MatrixView{m.Dense}
+	return MatrixView{view: m.imp}
 }
 
 type MatrixViewable interface {
@@ -29,27 +29,27 @@ type MatrixViewable interface {
 }
 
 func (m Matrix) Dims() (rows, columns int) {
-	return m.Dense.Dims()
+	return m.imp.Dims()
 }
 
 func (m Matrix) At(row, column int) float64 {
-	return m.Dense.At(row, column)
+	return m.imp.At(row, column)
 }
 
 func (m Matrix) Transpose() MatrixView {
-	return MatrixView{m.Dense.T()}
+	return MatrixView{m.imp.T()}
 }
 
 func (v MatrixView) Dims() (rows, columns int) {
-	return v.Matrix.Dims()
+	return v.view.Dims()
 }
 
 func (v MatrixView) At(row, column int) float64 {
-	return v.Matrix.At(row, column)
+	return v.view.At(row, column)
 }
 
 func (v MatrixView) Transpose() MatrixView {
-	return MatrixView{v.Matrix.T()}
+	return MatrixView{v.view.T()}
 }
 
 func (v MatrixView) View() MatrixView {
@@ -103,27 +103,27 @@ func NewRowVector(values []float64) Matrix {
 }
 
 func (m Matrix) MatrixMultiply(a, b MatrixViewable) {
-	m.Mul(a.View().Matrix, b.View().Matrix)
+	m.imp.Mul(a.View().view, b.View().view)
 }
 
 func (m Matrix) AddColumnVector(a, b MatrixViewable) {
-	m.Apply(func(i, j int, v float64) float64 {
+	m.imp.Apply(func(i, j int, v float64) float64 {
 		return v + b.At(i, 0)
-	}, a.View().Matrix)
+	}, a.View().view)
 }
 
 func (m Matrix) ElemOp(a MatrixViewable, f func(v float64) float64) {
 	applyFunc := func(i, j int, v float64) float64 {
 		return f(v)
 	}
-	m.Apply(applyFunc, a.View().Matrix)
+	m.imp.Apply(applyFunc, a.View().view)
 }
 
 func (m Matrix) MatrixElemOp(a, b MatrixViewable, f func(v1, v2 float64) float64) {
 	applyFunc := func(i, j int, v float64) float64 {
 		return f(v, b.At(i, j))
 	}
-	m.Apply(applyFunc, a.View().Matrix)
+	m.imp.Apply(applyFunc, a.View().view)
 }
 
 func (m Matrix) RowSum(matToSum MatrixViewable, normalize bool) {
@@ -146,7 +146,7 @@ func (m Matrix) RowSum(matToSum MatrixViewable, normalize bool) {
 			if normalize {
 				sum /= float64(c)
 			}
-			m.Set(i, 0, sum)
+			m.imp.Set(i, 0, sum)
 		}(i)
 	}
 	wg.Wait()
@@ -164,5 +164,5 @@ func (m Matrix) FrobeniusNorm() float64 {
 }
 
 func (m Matrix) String() string {
-	return fmt.Sprintf("%+v", *m.Dense)
+	return fmt.Sprintf("%+v", *m.imp)
 }
