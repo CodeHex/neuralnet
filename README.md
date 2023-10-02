@@ -9,6 +9,7 @@ Implements a basic L-Layer neural network. Current features are
 - Auto-initialize weights
 - Augment data by flipping images horizontally
 - Normalize data sets
+- Use L2 regularization
 
 
 ## How to use
@@ -20,6 +21,7 @@ Define the L layer net by using the `neuralnet.NewHyperParametersBuilder()` with
 - `AddNLayer(a ActivationFuncName, neurons uint, n uint)` - adds n indentical layers to the net
 - `SetLearningRate(learningRate float64)` - The learning rate to use, defaults to 0.01
 - `SetIterations(iterations uint)` - number of iterations used to train the model, defaults to 1000
+- `SetRegularizationFactor(regularizationFactor float64)` - the regularization factor to use. 0 indicates not to regularize.
 
 The last layer must be a single neuron using the `sigmoid` activation function for binary classification.
 
@@ -30,6 +32,7 @@ hyperParams, err := neuralnet.NewHyperParametersBuilder().
     AddLayer(neuralnet.ActivationFuncNameSigmoid, 1)
     SetLearningRate(0.15).
     SetIterations(5000).
+    SetRegularizationFactor(0.5). 
     Build()
 ```
 
