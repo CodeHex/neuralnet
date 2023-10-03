@@ -16,6 +16,10 @@ type parameters struct {
 	W, b []mx.Matrix
 }
 
+type velocity struct {
+	vW, vb []mx.Matrix
+}
+
 type cacheLayer struct {
 	Z, A, D, DW, Db, DZ, DA mx.Matrix
 }
@@ -58,6 +62,7 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 	m := trainingDataSet.NumberOfExamples()
 	batches := h.partitionSamples(h.miniBatchSize, nodes, trainingDataSet)
 	L := len(nodes) - 1
+	v := h.initVelocity(nodes)
 
 	for iter := uint(0); iter < h.iterations; iter++ {
 		for batchIndex, batch := range batches {
@@ -80,7 +85,7 @@ func (h HyperParameters) TrainModel(trainingDataSet *ImageSet) (*TrainedModel, e
 			// Backward propagation and update parameters
 			for i := L; i > 0; i-- {
 				h.backwardPropagation(batch.X, batch.cache, params, i, m)
-				h.updateParameters(batch.cache, params, i)
+				h.updateParameters(batch.cache, params, v, i)
 			}
 		}
 	}
@@ -99,6 +104,18 @@ func (h HyperParameters) initParameters(nodes []uint) *parameters {
 		params.b[i] = mx.NewZeroMatrix(nodes[i], 1)
 	}
 	return &params
+}
+
+func (h HyperParameters) initVelocity(nodes []uint) *velocity {
+	vel := velocity{
+		vW: make([]mx.Matrix, len(nodes)),
+		vb: make([]mx.Matrix, len(nodes)),
+	}
+	for i := 1; i < len(nodes); i++ {
+		vel.vW[i] = mx.NewZeroMatrix(nodes[i], nodes[i-1])
+		vel.vb[i] = mx.NewZeroMatrix(nodes[i], 1)
+	}
+	return &vel
 }
 
 func (h HyperParameters) initCache(nodes []uint, numOfExamples uint) []cacheLayer {
@@ -173,10 +190,23 @@ func (h HyperParameters) backwardPropagation(X mx.MatrixViewable, cache []cacheL
 	cache[i].DW.ElemOp(cache[i].DW, func(v float64) float64 { return v / float64(m) })
 }
 
-func (h HyperParameters) updateParameters(cache []cacheLayer, params *parameters, i int) {
+func (h HyperParameters) updateParameters(cache []cacheLayer, params *parameters, v *velocity, i int) {
 	deltaFunc := func(x, dx float64) float64 { return x - h.learningRate*dx }
-	params.W[i].MatrixElemOp(params.W[i], cache[i].DW, deltaFunc)
-	params.b[i].MatrixElemOp(params.b[i], cache[i].Db, deltaFunc)
+	if h.momentumBeta == 0 {
+		params.W[i].MatrixElemOp(params.W[i], cache[i].DW, deltaFunc)
+		params.b[i].MatrixElemOp(params.b[i], cache[i].Db, deltaFunc)
+		return
+	}
+
+	// Update the momentum and use that to update the parameters
+	updateMomentFunc := func(v1, v2 float64) float64 {
+		return (h.momentumBeta * v1) + ((1 - h.momentumBeta) * v2)
+	}
+
+	v.vW[i].MatrixElemOp(v.vW[i], cache[i].DW, updateMomentFunc)
+	v.vb[i].MatrixElemOp(v.vb[i], cache[i].Db, updateMomentFunc)
+	params.W[i].MatrixElemOp(params.W[i], v.vW[i], deltaFunc)
+	params.b[i].MatrixElemOp(params.b[i], v.vb[i], deltaFunc)
 }
 
 func (t *TrainedModel) Predict(set *ImageSet) {

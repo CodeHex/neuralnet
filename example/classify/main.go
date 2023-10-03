@@ -11,11 +11,12 @@ func main() {
 	hyperParams, err := neuralnet.NewHyperParametersBuilder().
 		AddLayers(neuralnet.ActivationFuncNameReLU, 6, 6).
 		AddLayers(neuralnet.ActivationFuncNameSigmoid, 1).
-		SetLearningRate(0.02).
+		SetLearningRate(0.5).
 		SetIterations(2000).
 		SetRegularizationFactor(0.5).
 		SetDropoutKeepProbability(0.75).
 		SetMiniBatchSize(1024).
+		UseGradientDescentWithMomentum(0.9).
 		Build()
 
 	if err != nil {

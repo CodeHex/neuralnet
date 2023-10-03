@@ -29,6 +29,7 @@ type HyperParameters struct {
 	regularizationFactor float64
 	keepProb             float64
 	miniBatchSize        uint
+	momentumBeta         float64
 }
 
 type HyperParametersBuilder struct {
@@ -84,6 +85,11 @@ func (builder HyperParametersBuilder) SetDropoutKeepProbability(keepProb float64
 
 func (builder HyperParametersBuilder) SetMiniBatchSize(size uint) HyperParametersBuilder {
 	builder.params.miniBatchSize = size
+	return builder
+}
+
+func (builder HyperParametersBuilder) UseGradientDescentWithMomentum(beta float64) HyperParametersBuilder {
+	builder.params.momentumBeta = beta
 	return builder
 }
 
