@@ -123,14 +123,28 @@ func (builder HyperParametersBuilder) Build() (HyperParameters, error) {
 }
 
 func (h HyperParameters) String() string {
-	title := fmt.Sprintf("number of layers: %d, learning rate: %.4f, iterations: %d",
-		len(h.layers), h.learningRate, h.iterations)
-	layers := "layers:\n"
+	title := "Hyperparameters:\n"
+	title += fmt.Sprintf("  number of layers: %d\n", len(h.layers))
+	title += fmt.Sprintf("  learning rate: %.5g\n", h.learningRate)
+	title += fmt.Sprintf("  iterations: %d\n", h.iterations)
+	if h.regularizationFactor > 0 {
+		title += fmt.Sprintf("  L2 regularization factor: %.5g\n", h.regularizationFactor)
+	}
+	if h.keepProb > 0 {
+		title += fmt.Sprintf("  dropout keep probability: %.5g\n", h.keepProb)
+	}
+	if h.miniBatchSize > 0 {
+		title += fmt.Sprintf("  mini-batch size: %d\n", h.miniBatchSize)
+	}
+	if h.momentumBeta > 0 {
+		title += fmt.Sprintf("  gradient descent using momentum: %.5g\n", h.momentumBeta)
+	}
+	layers := ""
 	for i := range h.layers {
 		layers += fmt.Sprintf("  layer %d - %d neuron(s), %s activation function\n",
 			i+1, h.layers[i].neurons, h.layers[i].actFuncLabel)
 	}
-	return "Hyperparameters:\n" + title + "\n" + layers
+	return title + "\n" + layers
 }
 
 func (h HyperParameters) Layer(i int) layerDefinition {
