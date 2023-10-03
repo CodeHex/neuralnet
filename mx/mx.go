@@ -57,6 +57,10 @@ func (v MatrixView) View() MatrixView {
 	return v
 }
 
+func (m Matrix) Set(row, column int, value float64) {
+	m.imp.Set(row, column, value)
+}
+
 func NewRandomMatrix(rows, columns uint, randomFactor float64) Matrix {
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)

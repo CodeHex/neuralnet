@@ -41,6 +41,22 @@ func TestNewZeroMatrix(t *testing.T) {
 	}
 }
 
+func TestNewRandomUnitMatrix(t *testing.T) {
+	m := mx.NewRandomUnitMatrix(3, 4, 0.5)
+	r, c := m.Dims()
+	if r != 3 || c != 4 {
+		t.Errorf("Expected matrix dimensions to be (3, 4), but got (%d, %d)", r, c)
+	}
+
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 4; j++ {
+			if m.At(i, j) != 0 && m.At(i, j) != 1 {
+				t.Errorf("Expected matrix value at (%v, %v) to be 0 or 1, but got %v", i, j, m.At(i, j))
+			}
+		}
+	}
+}
+
 func TestNewHorizontalStackedMatrix(t *testing.T) {
 	data := [][]float64{
 		{1.1, 2.2, 3.3},
@@ -69,5 +85,24 @@ func TestNewHorizontalStackedMatrix(t *testing.T) {
 	}
 	if m.At(2, 1) != 6.6 {
 		t.Errorf("Expected matrix value at (2, 1) to be 6.6, but got %v", m.At(2, 1))
+	}
+}
+
+func TestRowSum(t *testing.T) {
+	m := mx.NewZeroMatrix(2, 3)
+	m.Set(0, 0, 1)
+	m.Set(0, 1, 2)
+	m.Set(0, 2, 3)
+	m.Set(1, 0, 4)
+	m.Set(1, 1, 5)
+	m.Set(1, 2, 6)
+	target := mx.NewZeroMatrix(2, 1)
+	target.RowSum(m, false)
+
+	if target.At(0, 0) != 6 {
+		t.Errorf("Expected matrix value at (0, 0) to be 6, but got %v", m.At(0, 0))
+	}
+	if target.At(1, 0) != 15 {
+		t.Errorf("Expected matrix value at (1, 0) to be 15, but got %v", m.At(1, 0))
 	}
 }
